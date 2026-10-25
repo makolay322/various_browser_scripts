@@ -20,7 +20,8 @@
   const MAX_ENTRIES = 20000;
   const HIDE_CLASS = 'ytrh-hidden';
 
-  // "Oturum" = sayfanın tam yüklenmesi (F5 / yeni sekme). SPA geçişleri aynı oturumdur.
+  // "Oturum" = her sayfa gösterimi: tam yükleme (F5 / yeni sekme) veya YouTube içi sayfa geçişi.
+  // Aynı sayfa gösteriminde tekrar görünen video bir kez sayılır.
   const sessionSeen = new Set();
 
   // { videoId: { c: gösterimSayısı, t: sonGörülmeZamanı } }
@@ -69,8 +70,25 @@
     return m ? m[1] : null;
   }
 
-  const TILE_SELECTOR =
-    'ytd-rich-item-renderer, ytd-compact-video-renderer, yt-lockup-view-model';
+  const INNER_TILE_SELECTOR = [
+    'ytd-compact-video-renderer',
+    'yt-lockup-view-model',
+    'ytd-video-renderer',
+    'ytd-grid-video-renderer',
+    'ytm-shorts-lockup-view-model',
+    'ytd-reel-item-renderer',
+  ].join(',');
+  const LINK_SELECTOR = 'a[href*="/watch?v="], a[href^="/shorts/"]';
+
+  // Karolar, içlerindeki video linklerinden bulunur (YouTube tag adları sık değişiyor).
+  function findTiles() {
+    const tiles = new Set();
+    document.querySelectorAll(LINK_SELECTOR).forEach((a) => {
+      const tile = a.closest('ytd-rich-item-renderer') || a.closest(INNER_TILE_SELECTOR);
+      if (tile) tiles.add(tile);
+    });
+    return tiles;
+  }
 
   // Görünür alana ilk kez giren karo "gösterildi" sayılır.
   const io = new IntersectionObserver((entries) => {
@@ -88,12 +106,9 @@
       counts[id] = rec;
       scheduleSave();
     }
-  }, { threshold: 0.5 });
+  }, { threshold: 0.1 });
 
   function processTile(tile) {
-    // Ana sayfada rich-item içindeki lockup'ı ayrıca işleme.
-    if (tile.localName === 'yt-lockup-view-model' && tile.closest('ytd-rich-item-renderer')) return;
-
     const id = getVideoId(tile);
     if (tile.dataset.ytrhId === id) return; // değişmemiş
 
@@ -117,7 +132,7 @@
 
   function scan() {
     if (!isSupportedPage()) return;
-    document.querySelectorAll(TILE_SELECTOR).forEach(processTile);
+    findTiles().forEach(processTile);
   }
 
   let scanTimer = null;
@@ -128,7 +143,10 @@
 
   new MutationObserver(scheduleScan)
     .observe(document.body, { childList: true, subtree: true });
-  window.addEventListener('yt-navigate-finish', scheduleScan);
+  window.addEventListener('yt-navigate-finish', () => {
+    sessionSeen.clear();
+    scheduleScan();
+  });
   window.addEventListener('pagehide', pruneAndSave);
 
   GM_registerMenuCommand('Sayaçları sıfırla', () => {

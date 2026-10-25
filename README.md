@@ -18,14 +18,14 @@
 Ana sayfadaki video karolarında ve izleme sayfasındaki sağ "Önerilenler" sütununda:
 
 - Her videonun ID'sini tarayıcıda (Tampermonkey depolaması) saklar.
-- Bir video, bir oturumda ekranda (görünür alanda) ilk kez belirdiğinde sayacı 1 artar. Aynı oturumda tekrar görünmesi sayacı artırmaz.
+- Bir video, bir oturumda ekranda (görünür alanda, karonun en az %10'u) ilk kez belirdiğinde sayacı 1 artar. Aynı oturumda tekrar görünmesi sayacı artırmaz.
 - Sayacı **3'e ulaşmış** videoları **4. gösterimden itibaren gizler**.
 - İzlediğin videonun kendisi sayılmaz ve gizlenmez.
 
 Notlar:
 
-- **Oturum**, sayfanın tam yüklenmesidir (yeni sekme veya F5). Ana sayfa ile video sayfası arasındaki geçişler aynı oturumdur.
+- **Oturum**, her sayfa gösterimidir: tam yükleme (yeni sekme / F5) veya YouTube içinde ana sayfa ↔ video sayfası geçişi. Aynı sayfada tekrar görünen video bir kez sayılır.
 - 30 günden eski kayıtlar otomatik silinir (en fazla 20.000 kayıt tutulur).
 - Tampermonkey menüsünden **Sayaçları sıfırla** ve **İstatistik** komutları kullanılabilir.
 - Ayarlar script başındaki sabitlerdedir (`MAX_SHOWS`, `MAX_AGE_MS`).
-- YouTube arayüzü sık değiştiği için seçiciler (`TILE_SELECTOR`) zamanla güncelleme isteyebilir.
+- YouTube arayüzü sık değiştiği için seçiciler (`INNER_TILE_SELECTOR`) zamanla güncelleme isteyebilir.
