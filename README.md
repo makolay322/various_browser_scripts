@@ -12,6 +12,7 @@
 | Script | Açıklama |
 |---|---|
 | [`youtube-repeat-hider.user.js`](youtube-repeat-hider.user.js) | YouTube'da sürekli aynı videoların önerilmesini engeller. |
+| [`youtube-clutter-remover.user.js`](youtube-clutter-remover.user.js) | YouTube genelinde yarıda bırakılmış videoları, canlı yayınları, Mix playlistlerini ve "Yeni konuları keşfedin" satırlarını gizler. |
 
 ### YouTube Tekrar Eden Video Gizleyici
 
@@ -29,3 +30,19 @@ Notlar:
 - Tampermonkey menüsünden **Sayaçları sıfırla** ve **İstatistik** komutları kullanılabilir.
 - Ayarlar script başındaki sabitlerdedir (`MAX_SHOWS`, `MAX_AGE_MS`).
 - YouTube arayüzü sık değiştiği için seçiciler (`INNER_TILE_SELECTOR`) zamanla güncelleme isteyebilir.
+
+### YouTube Gereksiz İçerik Temizleyici
+
+YouTube genelinde (ana sayfa, öneriler, arama, abonelikler vb.) şunları gizler:
+
+- **Kısmen izlenmiş videolar** (küçük resimde ilerleme çubuğu olanlar)
+- **Canlı yayınlar** (CANLI / LIVE rozetli)
+- **Mix playlistleri** ("Your Mix", "Mix – ..." ve `list=RD...` bağlantılı karolar; resmi küratörlü `RDCLAK` listeleri hariç)
+- **"Yeni konuları keşfedin"** gibi konu keşif satırları
+
+Notlar:
+
+- Her filtre script başındaki `HIDE_*` sabitleriyle ayrı ayrı kapatılabilir.
+- İzleme geçmişi, playlist ve kütüphane sayfalarına dokunmaz (`EXCLUDED_PATHS`). Şu an dinlenen playlistin yan paneli de gizlenmez.
+- Rozet/ilerleme çubuğu geç yüklendiğinde karo sonradan gizlenir; kısa bir an görünüp kaybolabilir.
+- YouTube arayüzü sık değiştiği için seçiciler zamanla güncelleme isteyebilir.
