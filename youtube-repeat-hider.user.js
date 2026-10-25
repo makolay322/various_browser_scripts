@@ -32,24 +32,36 @@
   style.textContent = `.${HIDE_CLASS} { display: none !important; }`;
   document.documentElement.appendChild(style);
 
-  function pruneAndSave() {
+  // id -> eklenecek sayaç farkı (0 = sadece son görülme zamanını tazele)
+  const pending = new Map();
+
+  // Başka sekmelerin yazdıklarını ezmemek için kaydederken depoyu yeniden okuyup farkları uygular.
+  function flush() {
+    const stored = GM_getValue(STORE_KEY, {});
     const now = Date.now();
-    let ids = Object.keys(counts);
+    for (const [id, delta] of pending) {
+      const rec = stored[id] || { c: 0, t: 0 };
+      rec.c += delta;
+      rec.t = now;
+      stored[id] = rec;
+    }
+    pending.clear();
+    let ids = Object.keys(stored);
     for (const id of ids) {
-      if (now - counts[id].t > MAX_AGE_MS) delete counts[id];
+      if (now - stored[id].t > MAX_AGE_MS) delete stored[id];
     }
-    ids = Object.keys(counts);
+    ids = Object.keys(stored);
     if (ids.length > MAX_ENTRIES) {
-      ids.sort((a, b) => counts[a].t - counts[b].t)
+      ids.sort((x, y) => stored[x].t - stored[y].t)
         .slice(0, ids.length - MAX_ENTRIES)
-        .forEach((id) => delete counts[id]);
+        .forEach((id) => delete stored[id]);
     }
-    GM_setValue(STORE_KEY, counts);
+    GM_setValue(STORE_KEY, stored);
+    counts = stored;
   }
 
   function scheduleSave() {
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(pruneAndSave, 1000);
+    if (!saveTimer) saveTimer = setTimeout(() => { saveTimer = null; flush(); }, 1000);
   }
 
   function isSupportedPage() {
@@ -96,37 +108,43 @@
       if (!entry.isIntersecting) continue;
       const tile = entry.target;
       const id = tile.dataset.ytrhId;
-      if (!id) continue;
       io.unobserve(tile);
-      if (sessionSeen.has(id)) continue;
+      delete tile.dataset.ytrhObs;
+      if (!id || sessionSeen.has(id)) continue;
       sessionSeen.add(id);
-      const rec = counts[id] || { c: 0, t: 0 };
+      const rec = counts[id] || (counts[id] = { c: 0, t: 0 });
       rec.c += 1;
-      rec.t = Date.now();
-      counts[id] = rec;
+      pending.set(id, (pending.get(id) || 0) + 1);
       scheduleSave();
     }
   }, { threshold: 0.1 });
 
+  // Her taramada her karo yeniden değerlendirilir (karolar geri dönüştürülür, sayfa geçişlerinde durum değişir).
   function processTile(tile) {
     const id = getVideoId(tile);
-    if (tile.dataset.ytrhId === id) return; // değişmemiş
 
-    // YouTube karoları geri dönüştürür: id değiştiyse durumu sıfırla.
-    io.unobserve(tile);
-    tile.classList.remove(HIDE_CLASS);
-    if (!id) { delete tile.dataset.ytrhId; return; }
+    if (!id || id === currentVideoId()) { // izlenen videoyu sayma/gizleme
+      tile.classList.remove(HIDE_CLASS);
+      if (tile.dataset.ytrhObs) { io.unobserve(tile); delete tile.dataset.ytrhObs; }
+      delete tile.dataset.ytrhId;
+      return;
+    }
     tile.dataset.ytrhId = id;
 
-    if (id === currentVideoId()) return; // izlenen videoyu sayma/gizleme
-
+    const seen = sessionSeen.has(id);
     const rec = counts[id];
-    if (!sessionSeen.has(id) && rec && rec.c >= MAX_SHOWS) {
-      tile.classList.add(HIDE_CLASS);
-      rec.t = Date.now();
-      scheduleSave();
-    } else {
+    const hide = !seen && !!rec && rec.c >= MAX_SHOWS;
+    tile.classList.toggle(HIDE_CLASS, hide);
+    if (hide) pending.set(id, pending.get(id) || 0); // kaydı canlı tut
+    if (hide) scheduleSave();
+
+    const wantObserve = !hide && !seen;
+    if (!wantObserve) {
+      if (tile.dataset.ytrhObs) { io.unobserve(tile); delete tile.dataset.ytrhObs; }
+    } else if (tile.dataset.ytrhObs !== id) {
+      io.unobserve(tile);
       io.observe(tile);
+      tile.dataset.ytrhObs = id;
     }
   }
 
@@ -135,24 +153,30 @@
     findTiles().forEach(processTile);
   }
 
+  // Debounce değil throttle: YouTube sürekli DOM değiştirdiği için debounce hiç çalışmayabilir.
   let scanTimer = null;
   function scheduleScan() {
-    clearTimeout(scanTimer);
-    scanTimer = setTimeout(scan, 300);
+    if (!scanTimer) scanTimer = setTimeout(() => { scanTimer = null; scan(); }, 300);
   }
 
   new MutationObserver(scheduleScan)
     .observe(document.body, { childList: true, subtree: true });
   window.addEventListener('yt-navigate-finish', () => {
+    // Yeni sayfa gösterimi = yeni oturum
+    flush();
     sessionSeen.clear();
+    io.disconnect();
+    document.querySelectorAll('[data-ytrh-obs]').forEach((el) => delete el.dataset.ytrhObs);
     scheduleScan();
   });
-  window.addEventListener('pagehide', pruneAndSave);
+  window.addEventListener('pagehide', flush);
 
   GM_registerMenuCommand('Sayaçları sıfırla', () => {
     counts = {};
+    pending.clear();
     GM_setValue(STORE_KEY, counts);
     document.querySelectorAll('.' + HIDE_CLASS).forEach((el) => el.classList.remove(HIDE_CLASS));
+    scheduleScan();
     alert('YouTube Tekrar Gizleyici: tüm sayaçlar sıfırlandı.');
   });
   GM_registerMenuCommand('İstatistik', () => {

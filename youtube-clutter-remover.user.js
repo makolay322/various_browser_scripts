@@ -137,10 +137,10 @@
     }
   }
 
+  // Debounce değil throttle: YouTube sürekli DOM değiştirdiği için debounce hiç çalışmayabilir.
   let timer = null;
   function scheduleScan() {
-    clearTimeout(timer);
-    timer = setTimeout(scan, 250);
+    if (!timer) timer = setTimeout(() => { timer = null; scan(); }, 250);
   }
 
   // Rozetler ve ilerleme çubukları karolardan sonra yüklenebildiği için alt ağacı izle
