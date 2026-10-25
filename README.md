@@ -1,48 +1,15 @@
 # various_browser_scripts
 
-Çeşitli Tampermonkey kullanıcı scriptleri. Yeni script eklendikçe bu liste güncellenir.
+A collection of Tampermonkey userscripts.
 
-## Kurulum
+## Install
 
-1. Tarayıcına [Tampermonkey](https://www.tampermonkey.net/) eklentisini kur.
-2. İstediğin `*.user.js` dosyasını GitHub'da aç, **Raw** düğmesine tıkla; Tampermonkey kurulum ekranı açılır.
+1. Install [Tampermonkey](https://www.tampermonkey.net/).
+2. Open a `*.user.js` file on GitHub and click **Raw**.
 
-## Scriptler
+## Scripts
 
-| Script | Açıklama |
+| Script | Description |
 |---|---|
-| [`youtube-repeat-hider.user.js`](youtube-repeat-hider.user.js) | YouTube'da sürekli aynı videoların önerilmesini engeller. |
-| [`youtube-clutter-remover.user.js`](youtube-clutter-remover.user.js) | YouTube genelinde yarıda bırakılmış videoları, canlı yayınları, Mix playlistlerini ve "Yeni konuları keşfedin" satırlarını gizler. |
-
-### YouTube Tekrar Eden Video Gizleyici
-
-Ana sayfadaki video karolarında ve izleme sayfasındaki sağ "Önerilenler" sütununda:
-
-- Her videonun ID'sini tarayıcıda (Tampermonkey depolaması) saklar.
-- Bir video, bir oturumda ekranda (görünür alanda, karonun en az %10'u) ilk kez belirdiğinde sayacı 1 artar. Aynı oturumda tekrar görünmesi sayacı artırmaz.
-- Sayacı **3'e ulaşmış** videoları **4. gösterimden itibaren gizler**.
-- İzlediğin videonun kendisi sayılmaz ve gizlenmez.
-
-Notlar:
-
-- **Oturum**, her sayfa gösterimidir: tam yükleme (yeni sekme / F5) veya YouTube içinde ana sayfa ↔ video sayfası geçişi. Aynı sayfada tekrar görünen video bir kez sayılır.
-- 30 günden eski kayıtlar otomatik silinir (en fazla 20.000 kayıt tutulur).
-- Tampermonkey menüsünden **Sayaçları sıfırla** ve **İstatistik** komutları kullanılabilir.
-- Ayarlar script başındaki sabitlerdedir (`MAX_SHOWS`, `MAX_AGE_MS`).
-- YouTube arayüzü sık değiştiği için seçiciler (`INNER_TILE_SELECTOR`) zamanla güncelleme isteyebilir.
-
-### YouTube Gereksiz İçerik Temizleyici
-
-YouTube genelinde (ana sayfa, öneriler, arama, abonelikler vb.) şunları gizler:
-
-- **Kısmen izlenmiş videolar** (küçük resimde ilerleme çubuğu olanlar)
-- **Canlı yayınlar** (CANLI / LIVE rozetli)
-- **Mix playlistleri** ("Your Mix", "Mix – ..." ve `list=RD...` bağlantılı karolar; resmi küratörlü `RDCLAK` listeleri hariç)
-- **"Yeni konuları keşfedin"** gibi konu keşif satırları
-
-Notlar:
-
-- Her filtre script başındaki `HIDE_*` sabitleriyle ayrı ayrı kapatılabilir.
-- İzleme geçmişi, playlist ve kütüphane sayfalarına dokunmaz (`EXCLUDED_PATHS`). Şu an dinlenen playlistin yan paneli de gizlenmez.
-- Rozet/ilerleme çubuğu geç yüklendiğinde karo sonradan gizlenir; kısa bir an görünüp kaybolabilir.
-- YouTube arayüzü sık değiştiği için seçiciler zamanla güncelleme isteyebilir.
+| [`youtube-repeat-hider.user.js`](youtube-repeat-hider.user.js) | Hides videos on the YouTube home page and watch-page sidebar after they have been shown 3 times. |
+| [`youtube-clutter-remover.user.js`](youtube-clutter-remover.user.js) | Hides partially watched videos, live streams, Mix playlists and "Explore new topics" shelves on YouTube. |
