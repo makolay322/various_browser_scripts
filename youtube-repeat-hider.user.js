@@ -90,12 +90,15 @@
     'ytm-shorts-lockup-view-model',
     'ytd-reel-item-renderer',
   ].join(',');
+  // Abonelikler sayfası (YouTube önbelleğinde DOM'da kalsa bile) sayılmaz ve gizlenmez.
+  const EXCLUDED_AREA = 'ytd-browse[page-subtype="subscriptions"]';
   const LINK_SELECTOR = 'a[href*="/watch?v="], a[href^="/shorts/"]';
 
   // Karolar, içlerindeki video linklerinden bulunur (YouTube tag adları sık değişiyor).
   function findTiles() {
     const tiles = new Set();
     document.querySelectorAll(LINK_SELECTOR).forEach((a) => {
+      if (a.closest(EXCLUDED_AREA)) return;
       const tile = a.closest('ytd-rich-item-renderer') || a.closest(INNER_TILE_SELECTOR);
       if (tile) tiles.add(tile);
     });
@@ -111,6 +114,7 @@
       io.unobserve(tile);
       delete tile.dataset.ytrhObs;
       if (!id || sessionSeen.has(id)) continue;
+      if (!isSupportedPage() || tile.closest(EXCLUDED_AREA)) continue;
       sessionSeen.add(id);
       const rec = counts[id] || (counts[id] = { c: 0, t: 0 });
       rec.c += 1;
