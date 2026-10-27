@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.4.0
+// @version      1.5.0
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
 // @match        https://www.youtube.com/*
@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.4.0';
+  const VERSION = '1.5.0';
   const STEP_DELAY = 700;      // iki silme arası bekleme (ms)
   const WAIT_MENU = 3000;      // menü öğesi için azami bekleme
   const WAIT_REMOVED = 4000;   // karonun kalkması için azami bekleme
@@ -40,11 +40,42 @@
     return null;
   }
 
-  function findRemoveItem() {
-    return [...document.querySelectorAll(MENU_ITEM_SELECTOR)].find(
-      (el) => visible(el) && REMOVE_TEXT.test(el.textContent)
-    );
+  // YouTube bazı düğmelerde yalnızca tam işaretçi olay dizisine tepki verir
+  function realClick(el) {
+    ['pointerdown', 'mousedown', 'pointerup', 'mouseup', 'click'].forEach((type) => {
+      const Ctor = type.startsWith('pointer') ? PointerEvent : MouseEvent;
+      el.dispatchEvent(new Ctor(type, { bubbles: true, cancelable: true, composed: true, view: window, button: 0 }));
+    });
   }
+
+  const POPUP_AREA = 'ytd-popup-container, tp-yt-iron-dropdown, ytd-menu-popup-renderer, yt-contextual-sheet-layout, yt-sheet-view-model, [role="menu"], [role="dialog"]';
+  const CLICKABLE = 'yt-list-item-view-model, ytd-menu-service-item-renderer, tp-yt-paper-item, [role="menuitem"], button, a';
+
+  function popupTexts() {
+    const out = [];
+    document.querySelectorAll(POPUP_AREA + ', ' + MENU_ITEM_SELECTOR).forEach((el) => {
+      if (!visible(el)) return;
+      const t = el.textContent.replace(/\s+/g, ' ').trim();
+      if (t && t.length < 90 && !out.includes(t)) out.push(t);
+    });
+    return out;
+  }
+
+  function findRemoveItem() {
+    const direct = [...document.querySelectorAll(MENU_ITEM_SELECTOR)].find(
+      (el) => visible(el) && REMOVE_TEXT.test(el.textContent) && el.textContent.length < 120
+    );
+    if (direct) return direct;
+    // Yedek: açık menü/pencere içinde metni eşleşen en küçük eleman
+    for (const area of document.querySelectorAll(POPUP_AREA)) {
+      if (!visible(area)) continue;
+      const hit = [...area.querySelectorAll('*')].filter((el) => !el.children.length && visible(el) && REMOVE_TEXT.test(el.textContent))[0];
+      if (hit) return hit.closest(CLICKABLE) || hit;
+    }
+    return null;
+  }
+
+  let lastReason = '';
 
   const KNOWN_TILES = 'ytd-playlist-video-renderer, yt-lockup-view-model, ytd-playlist-panel-video-renderer';
   const videoId = (a) => (a.getAttribute('href').match(/[?&]v=([\w-]+)/) || [])[1];
@@ -84,18 +115,20 @@
     await sleep(150);
     item.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
     const btn = item.querySelector(MENU_BTN_SELECTOR);
-    if (!btn) return false;
-    btn.click();
+    if (!btn) { lastReason = 'menü düğmesi yok'; return false; }
+    realClick(btn);
 
     const entry = await waitFor(findRemoveItem, WAIT_MENU);
     if (!entry) {
-      document.body.click();
+      lastReason = 'kaldır öğesi yok; menüde görünenler: ' + (popupTexts().join(' | ') || '(menü açılmadı)');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      document.body.click();
       return false;
     }
-    entry.click();
+    realClick(entry);
     // Karo DOM'dan kalkana (veya gizlenene) kadar bekle
     const gone = await waitFor(() => !item.isConnected || !visible(item) || (id && !hasVideo(id)), WAIT_REMOVED);
+    if (!gone) lastReason = 'tıklandı ama video listeden kalkmadı: ' + entry.textContent.replace(/\s+/g, ' ').trim();
     return !!gone;
   }
 
@@ -104,7 +137,7 @@
   let failed = 0;
 
   const panel = document.createElement('div');
-  panel.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:99999;background:#222;color:#fff;' +
+  panel.style.cssText = 'white-space:pre-wrap;max-width:360px;position:fixed;right:16px;bottom:16px;z-index:99999;background:#222;color:#fff;' +
     'padding:10px 12px;border-radius:10px;font:13px/1.4 sans-serif;box-shadow:0 2px 10px rgba(0,0,0,.4);';
   const status = document.createElement('div');
   const button = document.createElement('button');
@@ -130,13 +163,15 @@
   setInterval(syncPanel, 1000);
 
   function render(msg) {
-    status.textContent = msg || `Kaldırılan: ${removed} · Başarısız: ${failed}`;
+    status.textContent = msg || `Kaldırılan: ${removed} · Başarısız: ${failed}` + (lastReason ? `\nSon hata: ${lastReason}` : '');
     button.textContent = running ? 'Durdur' : 'Listeyi temizle';
   }
 
   async function run() {
     running = true;
     let loadTries = 0;
+    let streak = 0;
+    lastReason = '';
     render();
     while (running) {
       const item = nextItem();
@@ -149,14 +184,14 @@
       }
       loadTries = 0;
       const ok = await removeOne(item);
-      if (ok) removed++;
-      else { failed++; item.dataset.ytpcFailed = '1'; }
+      if (ok) { removed++; streak = 0; }
+      else { failed++; streak++; item.dataset.ytpcFailed = '1'; if (streak >= 3) break; } // üst üste 3 hata: dur
       render();
       await sleep(STEP_DELAY);
     }
     const stopped = !running;
     running = false;
-    render(stopped ? `Durduruldu. Kaldırılan: ${removed} · Başarısız: ${failed}` : `Bitti. Kaldırılan: ${removed} · Başarısız: ${failed}`);
+    render((stopped ? 'Durduruldu. ' : 'Bitti. ') + `Kaldırılan: ${removed} · Başarısız: ${failed}` + (lastReason ? `\nSon hata: ${lastReason}` : ''));
   }
 
   button.addEventListener('click', () => {
