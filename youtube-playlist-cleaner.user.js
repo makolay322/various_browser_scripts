@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.5.0
+// @version      1.6.0
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
 // @match        https://www.youtube.com/*
@@ -12,7 +12,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.5.0';
+  const VERSION = '1.6.0';
   const STEP_DELAY = 700;      // iki silme arası bekleme (ms)
   const WAIT_MENU = 3000;      // menü öğesi için azami bekleme
   const WAIT_REMOVED = 4000;   // karonun kalkması için azami bekleme
@@ -125,10 +125,23 @@
       document.body.click();
       return false;
     }
-    realClick(entry);
-    // Karo DOM'dan kalkana (veya gizlenene) kadar bekle
-    const gone = await waitFor(() => !item.isConnected || !visible(item) || (id && !hasVideo(id)), WAIT_REMOVED);
-    if (!gone) lastReason = 'tıklandı ama video listeden kalkmadı: ' + entry.textContent.replace(/\s+/g, ' ').trim();
+    // Dış sarmalayıcıya tıklamak yetmeyebilir: içteki hedefleri sırayla dene
+    const leaf = [...entry.querySelectorAll('*')].filter((el) => !el.children.length && REMOVE_TEXT.test(el.textContent))[0];
+    const targets = [
+      entry.querySelector('button, a, [role="button"], [role="menuitem"]'),
+      leaf,
+      entry,
+    ].filter((el, i, arr) => el && arr.indexOf(el) === i);
+    const isGone = () => !item.isConnected || !visible(item) || (id && !hasVideo(id));
+    let gone = false;
+    for (const t of targets) {
+      realClick(t);
+      t.click();
+      gone = await waitFor(isGone, 2500);
+      if (gone) break;
+    }
+    if (!gone) lastReason = 'tıklandı ama video listeden kalkmadı: ' + entry.textContent.replace(/\s+/g, ' ').trim() +
+      ' [hedef: ' + targets.map((t) => t.tagName.toLowerCase()).join(',') + ']';
     return !!gone;
   }
 
