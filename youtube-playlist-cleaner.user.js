@@ -1,10 +1,10 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.0.0
+// @version      1.1.0
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
-// @match        https://www.youtube.com/playlist*
+// @match        https://www.youtube.com/*
 // @grant        none
 // @run-at       document-idle
 // ==/UserScript==
@@ -17,9 +17,9 @@
   const WAIT_REMOVED = 4000;   // karonun kalkması için azami bekleme
   const MAX_LOAD_TRIES = 5;    // yeni video yüklenmesi için kaydırma denemesi
 
-  const ITEM_SELECTOR = 'ytd-playlist-video-renderer';
-  const MENU_BTN_SELECTOR = '#menu button, ytd-menu-renderer button, button[aria-label][class*="menu"]';
-  const MENU_ITEM_SELECTOR = 'ytd-menu-service-item-renderer, yt-list-item-view-model, tp-yt-paper-item, ytd-menu-navigation-item-renderer';
+  const ITEM_SELECTOR = 'ytd-playlist-video-renderer, ytd-browse[page-subtype="playlist"] yt-lockup-view-model';
+  const MENU_BTN_SELECTOR = '#menu button, ytd-menu-renderer button, button[aria-label*="menu" i], button[aria-label*="menü" i], button[aria-label*="eylem" i], button[aria-label*="action" i]';
+  const MENU_ITEM_SELECTOR = 'ytd-menu-service-item-renderer, yt-list-item-view-model, tp-yt-paper-item, ytd-menu-navigation-item-renderer, [role="menuitem"]';
   // "Remove from Liked videos", "Remove from <playlist>", "Beğenilen videolardan kaldır", "... listesinden kaldır"
   const REMOVE_TEXT = /remove from|kaldır/i;
 
@@ -78,7 +78,15 @@
   button.style.cssText = 'margin-top:6px;padding:6px 10px;border:0;border-radius:6px;cursor:pointer;' +
     'background:#c00;color:#fff;font-weight:600;width:100%;';
   panel.append(status, button);
-  document.body.appendChild(panel);
+
+  // YouTube SPA: sayfa tam yüklenmeden playlist'e geçilebilir, paneli sayfaya göre ekle/kaldır.
+  function syncPanel() {
+    const onPlaylist = location.pathname === '/playlist';
+    if (onPlaylist && !panel.isConnected) document.body.appendChild(panel);
+    if (!onPlaylist) { running = false; panel.remove(); }
+  }
+  window.addEventListener('yt-navigate-finish', syncPanel);
+  setInterval(syncPanel, 1000);
 
   function render(msg) {
     status.textContent = msg || `Kaldırılan: ${removed} · Başarısız: ${failed}`;
@@ -119,4 +127,5 @@
   });
 
   render('Hazır');
+  syncPanel();
 })();
