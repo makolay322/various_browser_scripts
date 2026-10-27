@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.6.0
+// @version      1.6.1
+// @updateURL    https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-playlist-cleaner.user.js
+// @downloadURL  https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-playlist-cleaner.user.js
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
 // @match        https://www.youtube.com/*
@@ -12,7 +14,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.6.0';
+  const VERSION = '1.6.1';
   const STEP_DELAY = 700;      // iki silme arası bekleme (ms)
   const WAIT_MENU = 3000;      // menü öğesi için azami bekleme
   const WAIT_REMOVED = 4000;   // karonun kalkması için azami bekleme

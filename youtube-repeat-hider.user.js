@@ -1,7 +1,9 @@
 // ==UserScript==
 // @name         YouTube Tekrar Eden Video Gizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.0.0
+// @version      1.0.1
+// @updateURL    https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-repeat-hider.user.js
+// @downloadURL  https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-repeat-hider.user.js
 // @description  Ana sayfa ve izleme sayfasındaki önerilerde, 3 kez gösterilmiş videoları 4. gösterimden itibaren gizler.
 // @author       makolay322
 // @match        https://www.youtube.com/*

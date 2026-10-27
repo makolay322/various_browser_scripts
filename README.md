@@ -6,6 +6,7 @@ A collection of Tampermonkey userscripts.
 
 1. Install [Tampermonkey](https://www.tampermonkey.net/).
 2. Open a `*.user.js` file on GitHub and click **Raw**.
+3. Scripts update automatically via `@updateURL`; bump `@version` on every change.
 
 ## Scripts
 
