@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.3.0
+// @version      1.4.0
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
 // @match        https://www.youtube.com/*
@@ -12,6 +12,7 @@
 (function () {
   'use strict';
 
+  const VERSION = '1.4.0';
   const STEP_DELAY = 700;      // iki silme arası bekleme (ms)
   const WAIT_MENU = 3000;      // menü öğesi için azami bekleme
   const WAIT_REMOVED = 4000;   // karonun kalkması için azami bekleme
@@ -45,6 +46,7 @@
     );
   }
 
+  const KNOWN_TILES = 'ytd-playlist-video-renderer, yt-lockup-view-model, ytd-playlist-panel-video-renderer';
   const videoId = (a) => (a.getAttribute('href').match(/[?&]v=([\w-]+)/) || [])[1];
 
   // Karo: video linkini ve tek bir üç nokta menü düğmesini içeren en büyük üst eleman
@@ -61,14 +63,15 @@
         if (menus > 1 || otherVideo) break;
         if (menus === 1) tile = el;
       }
-      if (tile && visible(tile)) items.add(tile);
+      if (!tile) tile = a.closest(KNOWN_TILES);
+      if (tile) items.add(tile);
     });
-    document.querySelectorAll('ytd-playlist-video-renderer').forEach((el) => visible(el) && items.add(el));
+    document.querySelectorAll('ytd-playlist-video-renderer').forEach((el) => items.add(el));
     return [...items];
   }
 
   function nextItem() {
-    return findItems().find((el) => !el.dataset.ytpcFailed);
+    return findItems().find((el) => !el.dataset.ytpcFailed && visible(el));
   }
 
   const hasVideo = (id) => [...document.querySelectorAll(LINK_SELECTOR)]
@@ -110,10 +113,18 @@
   panel.append(status, button);
 
   // YouTube SPA: sayfa tam yüklenmeden playlist'e geçilebilir, paneli sayfaya göre ekle/kaldır.
+  // Sorun giderme: paneldeki sayılar neyin bulunduğunu gösterir
+  function diag() {
+    const links = document.querySelectorAll(LINK_SELECTOR).length;
+    const menus = document.querySelectorAll(MENU_BTN_SELECTOR).length;
+    return `v${VERSION} · link: ${links} · menü: ${menus} · karo: ${findItems().length}`;
+  }
+
   function syncPanel() {
     const onPlaylist = location.pathname === '/playlist';
     if (onPlaylist && !panel.isConnected) document.body.appendChild(panel);
     if (!onPlaylist) { running = false; panel.remove(); }
+    if (onPlaylist && !running && !removed && !failed) render('Hazır · ' + diag());
   }
   window.addEventListener('yt-navigate-finish', syncPanel);
   setInterval(syncPanel, 1000);
