@@ -1,9 +1,9 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.6.1
-// @updateURL    https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-playlist-cleaner.user.js
-// @downloadURL  https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-playlist-cleaner.user.js
+// @version      1.0.6
+// @updateURL    https://raw.githubusercontent.com/makolay322/various_browser_scripts/main/youtube-playlist-cleaner.user.js
+// @downloadURL  https://raw.githubusercontent.com/makolay322/various_browser_scripts/main/youtube-playlist-cleaner.user.js
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
 // @match        https://www.youtube.com/*
@@ -14,7 +14,7 @@
 (function () {
   'use strict';
 
-  const VERSION = '1.6.1';
+  const VERSION = '1.0.6';
   const STEP_DELAY = 700;      // iki silme arası bekleme (ms)
   const WAIT_MENU = 3000;      // menü öğesi için azami bekleme
   const WAIT_REMOVED = 4000;   // karonun kalkması için azami bekleme
@@ -104,7 +104,7 @@
   }
 
   function nextItem() {
-    return findItems().find((el) => !el.dataset.ytpcFailed && visible(el));
+    return findItems().find((el) => !el.dataset.ytpcFailed && !el.dataset.ytpcDone && visible(el));
   }
 
   const hasVideo = (id) => [...document.querySelectorAll(LINK_SELECTOR)]
@@ -134,7 +134,8 @@
       leaf,
       entry,
     ].filter((el, i, arr) => el && arr.indexOf(el) === i);
-    const isGone = () => !item.isConnected || !visible(item) || (id && !hasVideo(id));
+    // YouTube öğeyi sunucuda siler ama karoyu DOM'dan hemen kaldırmayabilir: menünün kapanması da başarı sayılır
+    const isGone = () => !item.isConnected || !visible(item) || (id && !hasVideo(id)) || !visible(entry);
     let gone = false;
     for (const t of targets) {
       realClick(t);
@@ -142,8 +143,9 @@
       gone = await waitFor(isGone, 2500);
       if (gone) break;
     }
-    if (!gone) lastReason = 'tıklandı ama video listeden kalkmadı: ' + entry.textContent.replace(/\s+/g, ' ').trim() +
+    if (!gone) lastReason = 'tıklandı ama menü kapanmadı: ' + entry.textContent.replace(/\s+/g, ' ').trim() +
       ' [hedef: ' + targets.map((t) => t.tagName.toLowerCase()).join(',') + ']';
+    else item.dataset.ytpcDone = '1'; // karo DOM'da kalsa bile tekrar işlenmesin
     return !!gone;
   }
 

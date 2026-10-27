@@ -2,8 +2,8 @@
 // @name         YouTube Gereksiz İçerik Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
 // @version      1.0.1
-// @updateURL    https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-clutter-remover.user.js
-// @downloadURL  https://raw.githubusercontent.com/makolay322/various_browser_scripts/claude/serene-ptolemy-fo5yvm/youtube-clutter-remover.user.js
+// @updateURL    https://raw.githubusercontent.com/makolay322/various_browser_scripts/main/youtube-clutter-remover.user.js
+// @downloadURL  https://raw.githubusercontent.com/makolay322/various_browser_scripts/main/youtube-clutter-remover.user.js
 // @description  Yarıda bırakılmış videoları, canlı yayınları, "Mix" playlistlerini ve "Yeni konuları keşfedin" satırlarını gizler.
 // @author       makolay322
 // @match        https://www.youtube.com/*
