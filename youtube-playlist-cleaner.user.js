@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Playlist Temizleyici
 // @namespace    https://github.com/makolay322/various_browser_scripts
-// @version      1.2.0
+// @version      1.3.0
 // @description  Beğenilen videolar (list=LL) dahil, açık playlist sayfasındaki videoları tek tek listeden kaldırır.
 // @author       makolay322
 // @match        https://www.youtube.com/*
@@ -20,10 +20,11 @@
   const LINK_SELECTOR = 'a[href*="/watch?v="]';
   // Başlık/kenar çubuğundaki "tümünü oynat" linkleri video karosu değildir
   const SKIP_AREA = 'ytd-playlist-header-renderer, ytd-playlist-sidebar-renderer, yt-page-header-renderer, ytd-masthead, ytd-miniplayer';
-  const MENU_BTN_SELECTOR = '#menu button, ytd-menu-renderer button, button[aria-label*="menu" i], button[aria-label*="menü" i], button[aria-label*="eylem" i], button[aria-label*="action" i]';
+  // Yeni düzende menü düğmesi .ytLockupMetadataViewModelMenuButton içindedir (aria-label dile göre değişir: "Mehr Aktionen", "More actions"...)
+  const MENU_BTN_SELECTOR = '[class*="MenuButton"] button, #menu button, ytd-menu-renderer button, button[aria-label*="menu" i], button[aria-label*="menü" i], button[aria-label*="eylem" i], button[aria-label*="action" i], button[aria-label*="aktion" i]';
   const MENU_ITEM_SELECTOR = 'ytd-menu-service-item-renderer, yt-list-item-view-model, tp-yt-paper-item, ytd-menu-navigation-item-renderer, [role="menuitem"]';
   // "Remove from Liked videos", "Remove from <playlist>", "Beğenilen videolardan kaldır", "... listesinden kaldır"
-  const REMOVE_TEXT = /remove from|kaldır/i;
+  const REMOVE_TEXT = /remove from|kaldır|entfernen|supprimer|eliminar|quitar|rimuovi/i;
 
   const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   const visible = (el) => !!(el && (el.offsetParent || el.getClientRects().length));
